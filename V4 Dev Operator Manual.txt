@@ -1,0 +1,88 @@
+﻿V4 Dev Operator Manual
+
+
+Enabling CAN busses
+
+
+cd ~/isaac_production_spinup
+sudo ./root_setup_can.sh
+
+Power Switches (and estop)
+This orin runs on a battery through a “safety board”
+The safety board has 4 switches that are connected to different parts of the system:
+Switch 1: arms, grippers, neck
+Switch 2: VLC
+Switch 4: Wheels
+
+
+To turn on switches requires a “heartbeat” and then to set the switch states. There is a helper script for these and calling electrical estop on the system.
+
+
+# Terminal 1: Heartbeat
+cd ~/safety-board
+. venv/bin/activate
+python wscp_orin_client.py --node 0x01 arm --hold
+
+# Terminal 2: Switch control
+cd ~/safety-board
+. venv/bin/activate
+# arms/neck
+python wscp_orin_client.py --node 0x01 switch 1 on
+# VLC
+python wscp_orin_client.py --node 0x01 switch 2 on
+# Base/wheels
+python wscp_orin_client.py --node 0x01 switch 4 on
+
+# Terminal 3: Estop
+cd ~/safety-board
+. venv/bin/activate
+python wscp_orin_client.py estop
+
+The wheels and VLC require the system to be powered on before the stack is run or they die. (Otherwise I would be using my safety board driver).
+
+
+Starting and activating the stack
+Starting the stack can be done through an alias. I like to have two terminals open, one for logs and the other commands:
+
+
+
+# Terminal 1: Log
+isaac-log
+
+# Terminal 2: Commands
+start-isaac
+stop-isaac
+
+
+Once the stack is started it will boot lifecycle nodes into “inactive” state (this includes arms, grippers, WBC). To activate it run:
+
+
+docker exec -it whole_body_coordinator bash
+
+ros2 service call /isaac/lifecycle_manager/set_mode std_srvs/srv/SetBool "{data: 1}"
+
+# To deactivate:
+ros2 service call /isaac/lifecycle_manager/set_mode std_srvs/srv/SetBool "{data: 0}"
+
+There is also a button in THub for activating and deactivating
+Common Issues
+DDS drops a service call. Usually has “rclcpp failed to send response to service client”.
+
+This can cause the lifecycle manager not to activate nodes when you tell it to activate.
+
+Restarting the stack is what I would generally recommend to fix.
+
+
+Cameras have an argus error:
+There should be a button in THub called reset cams but it might not be wired yet (bug Joe if that doesn’t work).
+
+Alternative:
+
+cd ~/isaac_production_spinup
+./bin/reset_cams
+
+
+If you see the VLC complaining about motor 8 error code 99 that’s fine. That means it is saturating the current it uses (avoiding an over-current issue).
+
+
+Also I have seen the VLC trajectory manager complain about it not arriving fast enough. If that becomes annoying lmk and I’ll relax tracking tolerances.
