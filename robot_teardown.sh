@@ -9,7 +9,7 @@
 #   5. Stop heartbeat
 #   6. Kill tmux session
 
-set -euo pipefail
+set -uo pipefail
 
 SESSION="robot"
 SAFETY_BOARD_DIR="$HOME/safety-board"
@@ -71,15 +71,23 @@ fi
 # ── Step 4: Turn off power switches ──
 read -rp "Step 4: Turn off all power switches? [y/N] " answer
 if [[ "$answer" =~ ^[Yy]$ ]]; then
-    echo "Turning off switches (reverse order)..."
-    cd "$SAFETY_BOARD_DIR"
-    . venv/bin/activate
-    python wscp_orin_client.py --node 0x01 switch 4 off
-    echo "  Switch 4 (wheels): OFF"
-    python wscp_orin_client.py --node 0x01 switch 2 off
-    echo "  Switch 2 (VLC): OFF"
-    python wscp_orin_client.py --node 0x01 switch 1 off
-    echo "  Switch 1 (arms/neck): OFF"
+    # Check if CAN bus is up before trying
+    if ! ip link show can0 up &>/dev/null; then
+        echo "  CAN bus (can0) is down — switches cannot be reached. Skipping."
+    else
+        echo "Turning off switches (reverse order)..."
+        cd "$SAFETY_BOARD_DIR"
+        . venv/bin/activate
+        python wscp_orin_client.py --node 0x01 switch 4 off 2>/dev/null \
+            && echo "  Switch 4 (wheels): OFF" \
+            || echo "  Warning: failed to turn off switch 4"
+        python wscp_orin_client.py --node 0x01 switch 2 off 2>/dev/null \
+            && echo "  Switch 2 (VLC): OFF" \
+            || echo "  Warning: failed to turn off switch 2"
+        python wscp_orin_client.py --node 0x01 switch 1 off 2>/dev/null \
+            && echo "  Switch 1 (arms/neck): OFF" \
+            || echo "  Warning: failed to turn off switch 1"
+    fi
 fi
 
 # ── Step 5: Stop heartbeat ──
