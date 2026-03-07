@@ -47,7 +47,7 @@ tmux send-keys -t "$SESSION:setup" "cd $SPINUP_DIR" C-m
 tmux send-keys -t "$SESSION:setup" "echo '── Step 1: Enable CAN buses ──'" C-m
 tmux send-keys -t "$SESSION:setup" "echo 'Run: sudo ./root_setup_can.sh'" C-m
 tmux send-keys -t "$SESSION:setup" "echo 'Then switch to the safety window: Ctrl-b n'" C-m
-tmux send-keys -t "$SESSION:setup" "# sudo ./root_setup_can.sh"
+tmux send-keys -t "$SESSION:setup" "sudo ./root_setup_can.sh"
 
 # ── Window 2: safety (heartbeat, switches, estop) ──
 tmux new-window -t "$SESSION" -n "safety"
@@ -57,7 +57,7 @@ tmux send-keys -t "$SESSION:safety" "cd $SAFETY_BOARD_DIR" C-m
 tmux send-keys -t "$SESSION:safety" ". venv/bin/activate" C-m
 tmux send-keys -t "$SESSION:safety" "echo '── Step 2: Heartbeat ──'" C-m
 tmux send-keys -t "$SESSION:safety" "echo 'Run the heartbeat (must stay running):'" C-m
-tmux send-keys -t "$SESSION:safety" "# python wscp_orin_client.py --node 0x01 arm --hold"
+tmux send-keys -t "$SESSION:safety" "python wscp_orin_client.py --node 0x01 arm --hold"
 
 # Pane 1: Switch control (split right)
 tmux split-window -h -t "$SESSION:safety"
@@ -72,7 +72,7 @@ tmux send-keys -t "$SESSION:safety.1" "echo ''" C-m
 tmux send-keys -t "$SESSION:safety.1" "echo 'Or run all at once:'" C-m
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 tmux send-keys -t "$SESSION:safety.1" "echo '  $SCRIPT_DIR/switch_on_all.sh'" C-m
-tmux send-keys -t "$SESSION:safety.1" "# $SCRIPT_DIR/switch_on_all.sh"
+tmux send-keys -t "$SESSION:safety.1" "$SCRIPT_DIR/switch_on_all.sh"
 
 # Pane 2: Estop (split below switches pane)
 tmux split-window -v -t "$SESSION:safety.1"
@@ -88,7 +88,7 @@ tmux new-window -t "$SESSION" -n "isaac"
 # Pane 0: Log
 tmux send-keys -t "$SESSION:isaac" "echo '── Step 5: Isaac Log ──'" C-m
 tmux send-keys -t "$SESSION:isaac" "echo 'Run: isaac-log'" C-m
-tmux send-keys -t "$SESSION:isaac" "# isaac-log"
+tmux send-keys -t "$SESSION:isaac" "isaac-log"
 
 # Pane 1: Commands (split right)
 tmux split-window -h -t "$SESSION:isaac"
@@ -100,7 +100,7 @@ tmux send-keys -t "$SESSION:isaac.1" "echo ''" C-m
 tmux send-keys -t "$SESSION:isaac.1" "echo 'After stack is running, activate lifecycle:'" C-m
 tmux send-keys -t "$SESSION:isaac.1" "echo '  docker exec -it whole_body_coordinator bash'" C-m
 tmux send-keys -t "$SESSION:isaac.1" "echo '  ros2 service call /isaac/lifecycle_manager/set_mode std_srvs/srv/SetBool \"{data: 1}\"'" C-m
-tmux send-keys -t "$SESSION:isaac.1" "# start-isaac"
+tmux send-keys -t "$SESSION:isaac.1" "start-isaac"
 
 # Start on the setup window
 tmux select-window -t "$SESSION:setup"
